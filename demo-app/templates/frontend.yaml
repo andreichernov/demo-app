@@ -1,0 +1,59 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Chart.Name }}-{{ .Values.frontend.name}}
+spec:
+  selector:
+    matchLabels:
+      app: {{ .Chart.Name }}-{{ .Values.frontend.name}}
+  replicas: {{ .Values.frontend.replicas }}
+  template:
+    metadata:
+      labels:
+        app: {{ .Chart.Name }}-{{ .Values.frontend.name}}
+    spec:
+      containers:
+      - name: {{ .Chart.Name }}-{{ .Values.frontend.name}}
+        image: {{ .Values.frontend.container.image.name }}:{{.Values.frontend.container.image.tag}}
+        imagePullPolicy: {{ .Values.frontend.container.image.imagePullPolicy }}
+        resources:
+          limits:
+            cpu: {{ .Values.frontend.container.resources.limits.cpu}}
+            memory: {{ .Values.frontend.container.resources.limits.memory}}
+          requests:
+            cpu: {{ .Values.frontend.container.resources.requests.cpu}}
+            memory: {{ .Values.frontend.container.resources.requests.memory}}
+        ports:
+        - containerPort: 5100
+        env:
+          - name: BACKEND_PROTOCOL
+            valueFrom:
+              configMapKeyRef:
+                name: {{ .Chart.Name }}-{{ .Values.backend.name}}-config
+                key: BACKEND_PROTOCOL
+          - name: BACKEND_HOST
+            valueFrom:
+              configMapKeyRef:
+                name: {{ .Chart.Name }}-{{ .Values.backend.name}}-config
+                key: BACKEND_HOST
+          - name: BACKEND_PORT
+            valueFrom:
+              configMapKeyRef:
+                name: {{ .Chart.Name }}-{{ .Values.backend.name}}-config
+                key: BACKEND_PORT
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ .Values.frontend.service.name }}
+  labels:
+    service: {{ .Values.frontend.service.name }}
+spec:
+  type: LoadBalancer
+  selector:
+    app: {{ .Chart.Name }}-{{ .Values.frontend.name}}
+  ports:
+  - name: "bind-frontend"
+    protocol: "TCP"
+    port: {{ .Values.frontend.service.port }}
+    targetPort: 5100

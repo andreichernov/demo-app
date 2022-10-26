@@ -1,0 +1,22 @@
+{% extends 'base.html' %}
+
+{% block content %}
+
+  <h1>Frontend</h1>
+  <p>This is a frontend application.</p>
+  <p>
+    <span>Time on the backend host: </span>
+    <code id="backend-time">None</code>
+  </p>
+  <script>
+    url = '{{ backend_url }}/time'
+    fetch(url)
+    .then(response => response.json())
+    .then(data => {
+      console.log(data)
+      let mountPoint = document.getElementById("backend-time")
+      mountPoint.innerHTML = data.time
+    });
+  </script>
+
+{% endblock %}

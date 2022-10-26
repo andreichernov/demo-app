@@ -1,0 +1,56 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: demo-frontend
+spec:
+  selector:
+    matchLabels:
+      app: demo-frontend
+  replicas: 2
+  template:
+    metadata:
+      labels:
+        app: demo-frontend
+    spec:
+      containers:
+      - name: demo-frontend
+        image: demo-frontend:latest
+        imagePullPolicy: Never
+        resources:
+          requests:
+            cpu: 10m
+            memory: 20Mi
+        ports:
+        - containerPort: 5100
+        env:
+          - name: BACKEND_PROTOCOL
+            valueFrom:
+              configMapKeyRef:
+                name: backend-config
+                key: BACKEND_PROTOCOL
+          - name: BACKEND_HOST
+            valueFrom:
+              configMapKeyRef:
+                name: backend-config
+                key: BACKEND_HOST
+          - name: BACKEND_PORT
+            valueFrom:
+              configMapKeyRef:
+                name: backend-config
+                key: BACKEND_PORT
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: demo-frontend
+  labels:
+    service: demo-frontend
+spec:
+  type: LoadBalancer
+  selector:
+    app: demo-frontend
+  ports:
+  - name: "bind-frontend"
+    protocol: "TCP"
+    port: 5100
+    targetPort: 5100

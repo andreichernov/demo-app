@@ -1,0 +1,74 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Chart.Name }}-{{ .Values.backend.name}}
+spec:
+  selector:
+    matchLabels:
+      app: {{ .Chart.Name }}-{{ .Values.backend.name}}
+  template:
+    metadata:
+      labels:
+        app: {{ .Chart.Name }}-{{ .Values.backend.name}}
+    spec:
+      containers:
+      - name: {{ .Chart.Name }}-{{ .Values.backend.name}}
+        image: {{ .Values.backend.container.image.name }}:{{.Values.backend.container.image.tag}}
+        imagePullPolicy: {{ .Values.backend.container.image.imagePullPolicy }}
+        resources:
+          limits:
+            cpu: {{ .Values.backend.container.resources.limits.cpu}}
+            memory: {{ .Values.backend.container.resources.limits.memory}}
+          requests:
+            cpu: {{ .Values.backend.container.resources.requests.cpu}}
+            memory: {{ .Values.backend.container.resources.requests.memory}}
+        ports:
+        - containerPort: 5200
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ .Chart.Name }}-{{ .Values.backend.name}}-config
+  labels:
+    app: {{ .Chart.Name }}-{{ .Values.backend.name}}
+data:
+  BACKEND_PROTOCOL: "http"
+  BACKEND_HOST: "localhost"
+  BACKEND_PORT: "{{ .Values.backend.service.port }}"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ .Values.backend.service.name }}
+  labels:
+    service: {{ .Values.backend.service.name }}
+spec:
+  type: LoadBalancer
+  selector:
+    app: {{ .Chart.Name }}-{{ .Values.backend.name}}
+  ports:
+  - name: "bind-backend"
+    protocol: "TCP"
+    port: {{ .Values.backend.service.port }}
+    targetPort: 5200
+---
+{{- if .Values.backend.hpa.enabled -}}
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: {{ .Chart.Name }}-{{ .Values.backend.name}}-autoscaling
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: {{ .Chart.Name }}-{{ .Values.backend.name}}
+  minReplicas: {{ .Values.backend.hpa.minReplicas }}
+  maxReplicas: {{ .Values.backend.hpa.maxReplicas }}
+  metrics:
+  - type: Resource
+    resource:
+      name: cpu
+      target:
+        type: Utilization
+        averageUtilization: {{ .Values.backend.hpa.targetCPUUtilizationPercentage }}
+{{- end -}}

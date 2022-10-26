@@ -1,0 +1,44 @@
+backend:
+  name: backend
+  container:
+    name:
+    image:
+      name: demo-backend
+      tag: latest
+      imagePullPolicy: Never
+    resources:
+      limits:
+        cpu: 200m
+        memory: 128Mi
+      requests:
+        cpu: 10m
+        memory: 20Mi
+  service:
+    name: demo-backend
+    port: 5200
+  hpa:
+    enabled: true
+    minReplicas: 1
+    maxReplicas: 10
+    targetCPUUtilizationPercentage: 60
+
+frontend:
+  name: frontend
+  replicas: 3
+  container:
+    name:
+    image:
+      name: demo-frontend
+      tag: latest
+      imagePullPolicy: Never
+    resources:
+      limits:
+        cpu: 20m
+        memory: 60Mi
+      requests:
+        cpu: 10m
+        memory: 20Mi
+  service:
+    name: demo-frontend
+    port: 5100
+
